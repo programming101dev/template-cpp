@@ -1,0 +1,3 @@
+main main.o display.o
+main.o main.cpp display.hpp
+display.o display.cpp display.hpp
