@@ -471,3 +471,5 @@ server
 .idea/codeStyles/
 
 *_flags.txt
+
+CMakeLists.txt
