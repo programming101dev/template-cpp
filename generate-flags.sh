@@ -20,15 +20,19 @@ else
     darwin_architecture="not_darwin"  # Not running on Darwin
 fi
 
-
 # Function to check if a flag is supported by the compiler
 is_flag_supported()
 {
     local compiler="$1"
     local flag="$2"
+
     if ("$compiler" $flag -E - < /dev/null &> /dev/null); then
         echo "Flag '$flag' is supported by $compiler."
-        supported_flags+=" $flag"
+        if [ -z "$supported_flags" ]; then
+            supported_flags="$flag"
+        else
+            supported_flags+=" $flag"
+        fi
     else
         echo "Flag '$flag' is not supported by $compiler."
     fi
@@ -40,7 +44,6 @@ WARNING_FLAGS=(
   "--extra-warnings"
   "-pedantic-errors"
   "-Waddress"
-  "-Waggregate-return"
   "-Wall"
   "-Walloc-zero"
   "-Walloca"
@@ -846,7 +849,6 @@ SANITIZER_FLAGS=(
     "-fsanitize=bounds"
     "-fsanitize=bounds-strict"
     "-fsanitize=alignment"
-    "-fsanitize=object-size"
     "-fsanitize=float-divide-by-zero"
     "-fsanitize=float-cast-overflow"
     "-fsanitize=nonnull-attribute"
@@ -900,7 +902,11 @@ process_flags()
     echo "Checking: $compiler"
 
     # Remove existing flag files
-    rm -f "./flags/${compiler}_debug_flags.txt" "./flags/${compiler}_analyzer_flags.txt" "./flags/${compiler}_warning_flags.txt" "./flags/${compiler}_sanitizer_flags.txt"
+    if [ -d "./flags/${compiler}" ]; then
+        rm -f "./flags/${compiler}/warning_flags.txt" "./flags/${compiler}/debug_flags.txt" "./flags/${compiler}/analyzer_flags.txt" "./flags/${compiler}/sanitizer_flags.txt"
+    else
+        mkdir -p "./flags/${compiler}"
+    fi
 
     # Reset the supported_flags variable for debug flags
     supported_flags=""
@@ -911,7 +917,7 @@ process_flags()
     done
 
     # Write the supported debug flags to debug_flags.txt as one line with spaces
-    echo "$supported_flags" > "./flags/${compiler}_debug_flags.txt"
+    echo "$supported_flags" > "./flags/${compiler}/debug_flags.txt"
 
     # Reset the supported_flags variable for analyzer flags
     supported_flags=""
@@ -922,7 +928,7 @@ process_flags()
     done
 
     # Write the supported analyzer flags to analyzer_flags.txt as one line with spaces
-    echo "$supported_flags" > "./flags/${compiler}_analyzer_flags.txt"
+    echo "$supported_flags" > "./flags/${compiler}/analyzer_flags.txt"
 
     # Reset the supported_flags variable for warning flags
     supported_flags=""
@@ -933,7 +939,7 @@ process_flags()
     done
 
     # Write the supported warning flags to warning_flags.txt as one line with spaces
-    echo "$supported_flags" > "./flags/${compiler}_warning_flags.txt"
+    echo "$supported_flags" > "./flags/${compiler}/warning_flags.txt"
 
     # Reset the supported_flags variable for sanitizer flags
     supported_flags=""
@@ -944,11 +950,11 @@ process_flags()
     done
 
     # Write the supported sanitizer flags to sanitizer_flags.txt as one line with spaces
-    echo "$supported_flags" > "./flags/${compiler}_sanitizer_flags.txt"
+    echo "$supported_flags" > "./flags/${compiler}/sanitizer_flags.txt"
 }
 
 # Initialize the list of potential compilers
-compilers=("g++" "clang++" "gcc13" "g++-13" "clang++-15" "clang++-16" "clang++-17" "clang++-18")
+compilers=("g++" "clang++" "g++13" "g++-13" "clang++-15" "clang++-16" "clang++-17" "clang++-18")
 
 # Initialize an empty list to store supported compilers
 supported_compilers=()

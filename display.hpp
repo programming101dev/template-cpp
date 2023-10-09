@@ -7,4 +7,4 @@
 
 void display(const char *msg);
 
-#endif //PROGRAMMING101_DISPLAY_H
+#endif    // PROGRAMMING101_DISPLAY_H
