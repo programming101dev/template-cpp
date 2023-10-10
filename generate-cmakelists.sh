@@ -148,7 +148,7 @@ generate_cmake_content() {
   echo "    # Add a custom target for clang --analyze" >> "$output_file"
   echo "    add_custom_command(" >> "$output_file"
   echo "        TARGET $first_target POST_BUILD" >> "$output_file"
-  echo "        COMMAND \${CMAKE_CXX_COMPILER} --analyzer-output text --analyze -Xclang -analyzer-checker=core --analyze -Xclang -analyzer-checker=deadcode -Xclang -analyzer-checker=security -Xclang -analyzer-disable-checker=security.insecureAPI.DeprecatedOrUnsafeBufferHandling -Xclang -analyzer-checker=unix -Xclang -analyzer-checker=unix \${CMAKE_C_FLAGS} \${STANDARD_FLAGS}  \${SOURCES} \${HEADERS}" >> "$output_file"
+  echo "        COMMAND \${CMAKE_CXX_COMPILER} --analyzer-output text --analyze -Xclang -analyzer-checker=core --analyze -Xclang -analyzer-checker=deadcode -Xclang -analyzer-checker=security -Xclang -analyzer-disable-checker=security.insecureAPI.DeprecatedOrUnsafeBufferHandling -Xclang -analyzer-checker=unix -Xclang -analyzer-checker=unix \${CMAKE_C_FLAGS} \${STANDARD_FLAGS} \${SOURCES} \${HEADERS}" >> "$output_file"
   echo "        WORKING_DIRECTORY \${CMAKE_SOURCE_DIR}" >> "$output_file"
   echo "        COMMENT \"Running clang --analyze\"" >> "$output_file"
   echo "    )" >> "$output_file"
