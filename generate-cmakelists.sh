@@ -152,6 +152,13 @@ generate_cmake_content() {
   echo "        WORKING_DIRECTORY \${CMAKE_SOURCE_DIR}" >> "$output_file"
   echo "        COMMENT \"Running clang --analyze\"" >> "$output_file"
   echo "    )" >> "$output_file"
+  echo "" >> "$output_file"
+  echo "    # Add a custom command to delete .gch files after the analysis" >> "$output_file"
+  echo "    add_custom_command(" >> "$output_file"
+  echo "        TARGET main POST_BUILD" >> "$output_file"
+  echo "        COMMAND \${CMAKE_COMMAND} -E remove \${CMAKE_SOURCE_DIR}/*.gch" >> "$output_file"
+  echo "        COMMENT \"Removing .gch files\"" >> "$output_file"
+  echo "    )" >> "$output_file"
   echo "endif ()" >> "$output_file"
   echo "" >> "$output_file"
 
