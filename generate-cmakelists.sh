@@ -117,9 +117,9 @@ generate_cmake_content() {
     echo "" >> "$output_file"
   done
 
-  echo "find_program(CLANG_FORMAT NAMES \"clang-format\" REQUIRED)" >> "$output_file"
-  echo "find_program(CLANG_TIDY NAMES \"clang-tidy\" REQUIRED)" >> "$output_file"
-  echo "find_program(CPPCHECK NAMES \"cppcheck\" REQUIRED)" >> "$output_file"
+  echo "find_program(CLANG_FORMAT NAMES \${CLANG_FORMAT_NAME} REQUIRED)" >> "$output_file"
+  echo "find_program(CLANG_TIDY NAMES \${CLANG_TIDY_NAME} REQUIRED)" >> "$output_file"
+  echo "find_program(CPPCHECK NAMES \${CPPCHECK_NAME} REQUIRED)" >> "$output_file"
   echo "" >> "$output_file"
 
   # Format source files using clang-format
