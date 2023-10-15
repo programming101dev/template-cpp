@@ -99,6 +99,11 @@ generate_cmake_content() {
 
   # Common compiler flags
   echo "set(STANDARD_FLAGS" >> "$output_file"
+  echo "    -D_POSIX_C_SOURCE=200809L" >> "$output_file"
+  echo "    -D_XOPEN_SOURCE=700" >> "$output_file"
+  echo "    -D_GNU_SOURCE" >> "$output_file"
+  echo "    -D_DARWIN_C_SOURCE" >> "$output_file"
+  echo "    -D__BSD_VISIBLE" >> "$output_file"
   echo "    -Werror" >> "$output_file"
   echo ")" >> "$output_file"
   echo "" >> "$output_file"
