@@ -954,7 +954,7 @@ process_flags()
 }
 
 # Initialize the list of potential compilers
-compilers=("g++" "clang++" "g++13" "g++-13" "clang++-15" "clang++-16" "clang++-17" "clang++-18" "clang++15" "clang++16" "clang++17" "clang++18")
+compilers=("g++" "clang++" "g++13" "g++-13" "clang++-15" "clang++-16" "clang++-17" "clang++-18" "clang++15" "clang++16" "clang++17" "clang++18" "clang++-devel")
 
 # Initialize an empty list to store supported compilers
 supported_compilers=()
