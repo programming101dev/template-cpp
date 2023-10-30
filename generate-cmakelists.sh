@@ -4,7 +4,7 @@
 set -e
 
 # Output file for CMakeLists.txt
-input_file="files.txt"
+files_file="files.txt"
 output_file="CMakeLists.txt"
 
 # Function to generate CMakeLists-like content
@@ -13,6 +13,7 @@ generate_cmake_content() {
   shift
   local sources=""
   local headers=""
+  local libraries=""
 
   for file in "$@"; do
     if [[ $file == *".cpp" ]]; then
@@ -21,6 +22,8 @@ generate_cmake_content() {
     elif [[ $file == *".hpp" ]]; then
       headers="${headers}    \${CMAKE_SOURCE_DIR}/$file\n"
       echo "list(APPEND HEADERS \${CMAKE_SOURCE_DIR}/$file)" >> "$output_file"
+    else
+      libraries="${libraries} $file"
     fi
   done
 
@@ -33,12 +36,18 @@ generate_cmake_content() {
   echo "" >> "$output_file"
   echo "add_executable($entity \${${entity}_SOURCES})" >> "$output_file"
   echo "" >> "$output_file"
+
+  # Add target_link_libraries for the entity
+  for library in $libraries; do
+    echo "target_link_libraries($entity PRIVATE $library)" >> "$output_file"
+  done
+  echo "" >> "$output_file"
 }
 
 # Additional code
 {
   # Read the first line of files.txt to determine the first target
-  first_target=$(awk '{print $1; exit}' "$input_file")
+  first_target=$(awk '{print $1; exit}' "$files_file")
   echo "cmake_minimum_required(VERSION 3.12)" > "$output_file"
   echo "" >> "$output_file"
   echo "project($first_target" >> "$output_file"
@@ -63,7 +72,7 @@ generate_cmake_content() {
       targets+=("$entity")  # Add the target name to the array
       generate_cmake_content "$entity" $files
     fi
-  done < "$input_file"
+  done < "$files_file"
 
   # Extract the compiler name without the path
   echo "message(\"C Compiler: \${CMAKE_CXX_COMPILER}\")" >> "$output_file"
