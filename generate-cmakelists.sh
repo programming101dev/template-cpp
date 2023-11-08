@@ -194,7 +194,7 @@ generate_cmake_content() {
   # Add a custom target for cppcheck
   echo "add_custom_command(" >> "$output_file"
   echo "    TARGET $first_target POST_BUILD" >> "$output_file"
-  echo "    COMMAND \${CPPCHECK} --error-exitcode=1 --force --quiet --library=posix --enable=all --suppress=missingIncludeSystem --suppress=unusedFunction --suppress=unmatchedSuppression \${SOURCES} \${HEADERS}" >> "$output_file"
+  echo "    COMMAND \${CPPCHECK} --error-exitcode=1 --force --quiet --inline-suppr --library=posix --enable=all --suppress=missingIncludeSystem --suppress=unusedFunction --suppress=unmatchedSuppression \${SOURCES} \${HEADERS}" >> "$output_file"
   echo "    WORKING_DIRECTORY \${CMAKE_SOURCE_DIR}" >> "$output_file"
   echo "    COMMENT \"Running cppcheck\"" >> "$output_file"
   echo ")" >> "$output_file"
