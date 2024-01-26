@@ -46,4 +46,8 @@ if [ -z "$cxx_compiler" ]; then
   usage
 fi
 
+if [ ! -d "./.flags" ]; then
+    ./generate-flags.sh
+fi
+
 cmake -S . -B build -DCMAKE_CXX_COMPILER="$cxx_compiler" -DCLANG_FORMAT_NAME="$clang_format_name" -DCLANG_TIDY_NAME="$clang_tidy_name" -DCPPCHECK_NAME="$cppcheck_name" -DCMAKE_BUILD_TYPE=Debug
