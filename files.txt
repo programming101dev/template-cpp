@@ -1,1 +1,1 @@
-main main.cpp display.cpp display.hpp
+main src/main.cpp src/display.cpp include/display.hpp

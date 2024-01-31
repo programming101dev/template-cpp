@@ -1,4 +1,4 @@
-#include "display.hpp"
+#include "../include/display.hpp"
 #include <iostream>
 
 using std::cout;
