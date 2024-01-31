@@ -51,7 +51,13 @@ if [ -z "$cxx_compiler" ]; then
   usage
 fi
 
-if [ ! -d "./.flags" ]; then
+./check-env.sh -c "$cxx_compiler" -f "$clang_format_name" -t "$clang_tidy_name" -k "$cppcheck_name"
+
+if [ ! -f "supported_cxx_compilers.txt" ] || ! grep -Fxq "$cxx_compiler" supported_cxx_compilers.txt; then
+   ./check-compilers.sh
+fi
+
+if [ ! -d "./.flags/$cxx_compiler" ]; then
     ./generate-flags.sh
 fi
 
