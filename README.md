@@ -9,6 +9,7 @@ Welcome to the `c++ template` repository. This guide will help you set up and ru
 3. [Running the `generate-cmakelists.sh` Script](#running-the-generate-cmakelistssh-script)
 4. [Running the `change-compiler.sh` Script](#running-the-change-compilersh-script)
 5. [Running the `build.sh` Script](#running-the-buildsh-script)
+5. [Running the `build-all.sh` Script](#running-the-build-allsh-script)
 6. [Copy the template to start a new project](#copy-the-template-to-start-a-new-project)
 
 ## **Cloning the Repository**
@@ -69,6 +70,15 @@ To build the program run:
 ```bash
 ./build.sh
 ```
+
+## **Running the build-all.sh Script**
+
+To build the program with all compilers run:
+
+```bash
+./build-all.sh
+```
+
 ## **Copy the template to start a new project**
 
 To create a new project from the template, run:
