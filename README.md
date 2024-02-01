@@ -9,6 +9,7 @@ Welcome to the `c++ template` repository. This guide will help you set up and ru
 3. [Running the `generate-cmakelists.sh` Script](#running-the-generate-cmakelistssh-script)
 4. [Running the `change-compiler.sh` Script](#running-the-change-compilersh-script)
 5. [Running the `build.sh` Script](#running-the-buildsh-script)
+6. [Copy the template to start a new project](#copy-the-template-to-start-a-new-project)
 
 ## **Cloning the Repository**
 
@@ -68,3 +69,22 @@ To build the program run:
 ```bash
 ./build.sh
 ```
+## **Copy the template to start a new project**
+
+To create a new project from the template, run:
+
+```bash
+./copy-template.sh <desitnation directory>
+```
+
+This will copy all of the files needed to start a new project.
+
+1. Edit the files.txt
+2. run ./generate-cmakelists.sh
+3. run ./change-compiler.sh -c <compiler>
+4. run ./build.sh
+
+The files.txt file contains:
+<executable> <source files> <header files> <libraries>
+
+When you need to add/removes files to/from the project you must rerun the 4 steps above. 
