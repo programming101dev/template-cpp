@@ -1,4 +1,4 @@
-# c-examples Repository Guide
+# template-cpp Repository Guide
 
 Welcome to the `c++ template` repository. This guide will help you set up and run the provided scripts.
 
