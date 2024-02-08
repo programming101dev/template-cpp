@@ -2,7 +2,6 @@
 
 # Default values
 dest_dir=""
-template_name=""
 
 # Function to display usage information
 usage()

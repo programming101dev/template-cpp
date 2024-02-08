@@ -56,7 +56,12 @@ generate_cmake_content() {
 
   # Add target_link_libraries for the entity
   for library in $libraries; do
-    echo "target_link_libraries($entity PRIVATE $library)" >> "$output_file"
+      echo "find_library(LIB_$library NAMES $library)" >> "$output_file"
+      echo "" >> "$output_file"
+
+      echo "if(LIB_$library)" >> "$output_file"
+      echo "    target_link_libraries($entity PRIVATE \${LIB_$library})" >> "$output_file"
+      echo "endif()" >> "$output_file"
   done
   echo "" >> "$output_file"
 }
