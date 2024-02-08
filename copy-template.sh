@@ -38,7 +38,7 @@ else
 fi
 
 # List of files and directories to copy
-files_to_copy=(".flags" ".clang-format" ".gitignore" "build.sh" "change-compiler.sh" "check-compilers.sh" "files.txt" "generate-cmakelists.sh" "generate-flags.sh" "README.md" "src" "include")
+files_to_copy=(".flags" ".clang-format" ".gitignore" "build.sh" "build-all.sh" "change-compiler.sh" "check-compilers.sh" "check-env.sh" "files.txt" "generate-cmakelists.sh" "generate-flags.sh" "README.md" "src" "include")
 
 # Copy files and directories to the destination directory
 for item in "${files_to_copy[@]}"; do
