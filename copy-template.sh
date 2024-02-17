@@ -47,9 +47,9 @@ for item in "${files_to_copy[@]}"; do
     if [ -e "$source_item" ]; then
         if [ ! -e "$dest_item" ]; then
             if [ -d "$source_item" ]; then
-                cp -r "$source_item" "$dest_item"
+                cp -P -r "$source_item" "$dest_item"
             else
-                cp "$source_item" "$dest_item"
+                cp -P "$source_item" "$dest_item"
             fi
 
             echo "Copied $item to $dest_dir"
