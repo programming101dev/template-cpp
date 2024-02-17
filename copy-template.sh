@@ -30,7 +30,7 @@ fi
 compilers_file="supported_cxx_compilers.txt"
 
 if [ -e "$source_dir/$compilers_file" ]; then
-    cp "$source_dir/$compilers_file" "$dest_dir"
+    cp -a "$source_dir/$compilers_file" "$dest_dir"
     echo "Copied $compilers_file to $dest_dir"
 else
     echo "$compilers_file not found in the template directory. Skipping."
@@ -46,12 +46,7 @@ for item in "${files_to_copy[@]}"; do
 
     if [ -e "$source_item" ]; then
         if [ ! -e "$dest_item" ]; then
-            if [ -d "$source_item" ]; then
-                cp -P -r "$source_item" "$dest_item"
-            else
-                cp -P "$source_item" "$dest_item"
-            fi
-
+            cp -a "$source_item" "$dest_item"
             echo "Copied $item to $dest_dir"
         else
             echo "$item already exists in $dest_dir. Skipping."
@@ -77,4 +72,3 @@ fi
 
 # Return to the original directory
 popd || exit
-
