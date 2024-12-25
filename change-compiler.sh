@@ -63,11 +63,13 @@ if [ ! -d "./.flags/$cxx_compiler" ]; then
     ./generate-flags.sh
 fi
 
+echo "Sanitizers = $sanitizers"
+
 # Split the sanitizers string and construct flags
 IFS=',' read -ra SANITIZERS <<< "$sanitizers"
 for sanitizer in "${SANITIZERS[@]}"; do
     sanitizer_flags+="-DSANITIZER_${sanitizer}=ON "
 done
 
-echo "$sanitizer_flags"
+rm -rf build/CMakeCache.txt
 cmake -S . -B build -DCMAKE_CXX_COMPILER="$cxx_compiler" -DCLANG_FORMAT_NAME="$clang_format_name" -DCLANG_TIDY_NAME="$clang_tidy_name" -DCPPCHECK_NAME="$cppcheck_name" $sanitizer_flags -DCMAKE_BUILD_TYPE=Debug -DCMAKE_OSX_SYSROOT=""
