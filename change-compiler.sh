@@ -5,16 +5,17 @@ clang_format_name="clang-format"
 clang_tidy_name="clang-tidy"
 cppcheck_name="cppcheck"
 sanitizers=""
+sanitizers_passed=false
 
 # Function to display script usage
 usage()
 {
     echo "Usage: $0 -c <c compiler> [-f <clang-format>] [-t <clang-tidy>] [-k <cppcheck>] [-s <sanitizers>]"
-    echo "  -c c++ compiler   Specify the c++ compiler name (e.g. gcc or clang)"
-    echo "  -f clang-format   Specify the clang-format name (e.g. clang-tidy or clang-tidy-17)"
+    echo "  -c c++ compiler   Specify the C compiler name (e.g. g++ or clang++)"
+    echo "  -f clang-format   Specify the clang-format name (e.g. clang-format or clang-format-17)"
     echo "  -t clang-tidy     Specify the clang-tidy name (e.g. clang-tidy or clang-tidy-17)"
     echo "  -k cppcheck       Specify the cppcheck name (e.g. cppcheck)"
-    echo "  -s sanitizers     Specify the sanitizers to use name (e.g. address,undefined)"
+    echo "  -s sanitizers     Specify the sanitizers to use (e.g. address,undefined; empty for none)"
     exit 1
 }
 
@@ -35,6 +36,7 @@ while getopts ":c:f:t:k:s:" opt; do
       ;;
     s)
       sanitizers="$OPTARG"
+      sanitizers_passed=true
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -53,6 +55,11 @@ if [ -z "$cxx_compiler" ]; then
   usage
 fi
 
+if [ ! -d "./.flags" ]; then
+    echo "Error: .flags directory does not exist. Please run generate-flags.sh to create it."
+    exit 1
+fi
+
 ./check-env.sh -c "$cxx_compiler" -f "$clang_format_name" -t "$clang_tidy_name" -k "$cppcheck_name"
 
 if [ ! -f "supported_cxx_compilers.txt" ] || ! grep -Fxq "$cxx_compiler" supported_cxx_compilers.txt; then
@@ -63,10 +70,22 @@ if [ ! -d "./.flags/$cxx_compiler" ]; then
     ./generate-flags.sh
 fi
 
-echo "Sanitizers = $sanitizers"
+# Read sanitizers from sanitizers.txt if -s was not passed
+if ! $sanitizers_passed; then
+    if [ -f "sanitizers.txt" ]; then
+        sanitizers=$(cat sanitizers.txt | tr -d ' \n')  # Remove spaces and newlines
+        echo "Sanitizers loaded from sanitizers.txt: $sanitizers"
+    else
+        echo "Error: sanitizers.txt not found and no sanitizers provided via -s option."
+        exit 1
+    fi
+else
+    echo "Sanitizers specified via command-line: $sanitizers"
+fi
 
 # Split the sanitizers string and construct flags
 IFS=',' read -ra SANITIZERS <<< "$sanitizers"
+sanitizer_flags=""
 for sanitizer in "${SANITIZERS[@]}"; do
     sanitizer_flags+="-DSANITIZER_${sanitizer}=ON "
 done
