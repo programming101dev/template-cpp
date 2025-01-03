@@ -336,7 +336,7 @@ echo "" >> "$output_file"
 
   # Add a custom target for cppcheck
   echo "add_custom_target(clean_gcda" >> "$output_file"
-  echo "      COMMAND find ${CMAKE_BINARY_DIR} -name "*.gcda" -delete" >> "$output_file"
+  echo "      COMMAND find . -name "*.gcda" -exec rm -f {} +" >> "$output_file"
   echo "      COMMENT "Cleaning up old .gcda files"" >> "$output_file"
   echo ")" >> "$output_file"
   echo "add_dependencies($first_target clean_gcda)" >> "$output_file"
