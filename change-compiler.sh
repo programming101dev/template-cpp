@@ -11,15 +11,15 @@ sanitizers_passed=false
 usage()
 {
     echo "Usage: $0 -c <c compiler> [-f <clang-format>] [-t <clang-tidy>] [-k <cppcheck>] [-s <sanitizers>]"
-    echo "  -c c++ compiler   Specify the C compiler name (e.g. g++ or clang++)"
-    echo "  -f clang-format   Specify the clang-format name (e.g. clang-format or clang-format-17)"
-    echo "  -t clang-tidy     Specify the clang-tidy name (e.g. clang-tidy or clang-tidy-17)"
-    echo "  -k cppcheck       Specify the cppcheck name (e.g. cppcheck)"
-    echo "  -s sanitizers     Specify the sanitizers to use (e.g. address,undefined; empty for none)"
+    echo "  -c c compiler    Specify the C compiler name (e.g. gcc or clang)"
+    echo "  -f clang-format  Specify the clang-format name (e.g. clang-format-17)"
+    echo "  -t clang-tidy    Specify the clang-tidy name (e.g. clang-tidy-17)"
+    echo "  -k cppcheck      Specify the cppcheck name (e.g. cppcheck)"
+    echo "  -s sanitizers    Specify sanitizers manually (e.g. address,undefined). If omitted, uses sanitizers.txt"
     exit 1
 }
 
-# Parse command-line options using getopt
+# Parse command-line options
 while getopts ":c:f:t:k:s:" opt; do
   case $opt in
     c)
@@ -49,46 +49,32 @@ while getopts ":c:f:t:k:s:" opt; do
   esac
 done
 
-# Check if the compiler argument is provided
+# Ensure a compiler is provided
 if [ -z "$cxx_compiler" ]; then
-  echo "Error: c++ compiler argument (-c) is required."
+  echo "Error: C++ compiler argument (-c) is required."
   usage
 fi
 
-if [ ! -d "./.flags" ]; then
-    echo "Error: .flags directory does not exist. Please run generate-flags.sh to create it."
-    exit 1
-fi
-
-./check-env.sh -c "$cxx_compiler" -f "$clang_format_name" -t "$clang_tidy_name" -k "$cppcheck_name"
-
-if [ ! -f "supported_cxx_compilers.txt" ] || ! grep -Fxq "$cxx_compiler" supported_cxx_compilers.txt; then
-   ./check-compilers.sh
-fi
-
-if [ ! -d "./.flags/$cxx_compiler" ]; then
-    ./generate-flags.sh
-fi
-
-# Read sanitizers from sanitizers.txt if -s was not passed
+# Check if sanitizers.txt should be used
 if ! $sanitizers_passed; then
     if [ -f "sanitizers.txt" ]; then
-        sanitizers=$(cat sanitizers.txt | tr -d ' \n')  # Remove spaces and newlines
+        sanitizers=$(tr -d ' \n' < sanitizers.txt)  # Remove spaces and newlines
         echo "Sanitizers loaded from sanitizers.txt: $sanitizers"
     else
-        echo "Error: sanitizers.txt not found and no sanitizers provided via -s option."
-        exit 1
+        echo "Warning: sanitizers.txt not found and no sanitizers provided via -s option. Defaulting to none."
+        sanitizers=""
     fi
 else
     echo "Sanitizers specified via command-line: $sanitizers"
 fi
 
-# Split the sanitizers string and construct flags
-IFS=',' read -ra SANITIZERS <<< "$sanitizers"
-sanitizer_flags=""
-for sanitizer in "${SANITIZERS[@]}"; do
-    sanitizer_flags+="-DSANITIZER_${sanitizer}=ON "
-done
-
+# Pass sanitizers as a single variable
 rm -rf build/CMakeCache.txt
-cmake -S . -B build -DCMAKE_CXX_COMPILER="$cxx_compiler" -DCLANG_FORMAT_NAME="$clang_format_name" -DCLANG_TIDY_NAME="$clang_tidy_name" -DCPPCHECK_NAME="$cppcheck_name" $sanitizer_flags -DCMAKE_BUILD_TYPE=Debug -DCMAKE_OSX_SYSROOT=""
+cmake -S . -B build \
+    -DCMAKE_CXX_COMPILER="$cxx_compiler" \
+    -DCLANG_FORMAT_NAME="$clang_format_name" \
+    -DCLANG_TIDY_NAME="$clang_tidy_name" \
+    -DCPPCHECK_NAME="$cppcheck_name" \
+    -DSANITIZER_LIST="$sanitizers" \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DCMAKE_OSX_SYSROOT=""
