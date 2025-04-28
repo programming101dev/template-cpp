@@ -11,7 +11,7 @@ set(STANDARD_FLAGS
         -D_POSIX_C_SOURCE=200809L
         -D_XOPEN_SOURCE=700
         #-D_GNU_SOURCE
-        #-D_DARWIN_C_SOURCE
+        -D_DARWIN_C_SOURCE
         #-D__BSD_VISIBLE
         -Werror
 )
