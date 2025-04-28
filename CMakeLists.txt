@@ -209,6 +209,7 @@ add_custom_target(cppcheck-check
 if(CMAKE_CXX_COMPILER MATCHES ".*clang.*")
     add_custom_target(clang-analyze
             COMMAND ${CMAKE_CXX_COMPILER} --analyze --analyzer-output text
+            ${STANDARD_FLAGS}
             -Xclang -analyzer-checker=core
             -Xclang -analyzer-checker=security
             -Xclang -analyzer-disable-checker=security.insecureAPI.DeprecatedOrUnsafeBufferHandling
