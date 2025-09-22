@@ -64,6 +64,16 @@ foreach(_lib ${EXTERNAL_LIBRARY_DIRS})
     link_directories("${_lib}")
 endforeach()
 
+# ---- Optional local include dir ----
+set(LOCAL_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
+if(EXISTS "${LOCAL_INCLUDE_DIR}")
+    set(HAVE_LOCAL_INCLUDE_DIR TRUE)
+else()
+    set(HAVE_LOCAL_INCLUDE_DIR FALSE)
+endif()
+# Generator-expression that expands to local include only if it exists
+set(BUILD_INCLUDE_IF_EXISTS $<$<BOOL:${HAVE_LOCAL_INCLUDE_DIR}>:${LOCAL_INCLUDE_DIR}>)
+
 add_library(sys_paths INTERFACE)
 if(EXTERNAL_INCLUDE_DIRS)
     target_include_directories(sys_paths INTERFACE ${EXTERNAL_INCLUDE_DIRS})
@@ -110,8 +120,7 @@ endif()
 find_program(CLANG_FORMAT NAMES ${CLANG_FORMAT_NAME})
 find_program(CLANG_TIDY   NAMES ${CLANG_TIDY_NAME})
 find_program(CPPCHECK     NAMES ${CPPCHECK_NAME})
-
-# Optional standalone clang for analyzer (used only if enabled)
+# Optional separate clang for analyzer (used only if enabled)
 find_program(CLANG_ANALYZER_EXE NAMES clang clang-20 clang-19 clang-18)
 
 message(STATUS "Found clang-format: ${CLANG_FORMAT}")
@@ -167,11 +176,11 @@ function(read_flags_file FILEPATH OUTLIST)
     file(STRINGS "${FILEPATH}" _lines)
     foreach(_L IN LISTS _lines)
         string(STRIP "${_L}" _L)
-        if(_L STREQUAL "" OR _L MATCHES "^[ \t]*#") # skip blank/comments
+        if(_L STREQUAL "" OR _L MATCHES "^[ \t]*#")
             continue()
         endif()
-        string(REGEX REPLACE "^\"(.*)\"$" "\\1" _L "${_L}")   # drop outer quotes
-        separate_arguments(_split UNIX_COMMAND "${_L}")       # shell-like split
+        string(REGEX REPLACE "^\"(.*)\"$" "\\1" _L "${_L}")
+        separate_arguments(_split UNIX_COMMAND "${_L}")
         list(APPEND _tokens ${_split})
     endforeach()
     list(TRANSFORM _tokens REPLACE "[\r“”‘’]" "")
@@ -302,7 +311,7 @@ if(EXECUTABLE_TARGETS)
         add_executable(${EXE})
         target_sources(${EXE} PRIVATE ${${EXE}_SOURCES})
         target_include_directories(${EXE} PUBLIC
-                $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+                ${BUILD_INCLUDE_IF_EXISTS}
                 $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         )
 
@@ -367,7 +376,7 @@ if(LIBRARY_TARGETS)
         add_library(${LIB})
         target_sources(${LIB} PRIVATE ${${LIB}_SOURCES})
         target_include_directories(${LIB} PUBLIC
-                $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+                ${BUILD_INCLUDE_IF_EXISTS}
                 $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         )
         target_link_libraries(${LIB} PRIVATE project_options sys_paths ${FINAL_LINK_LIBRARIES})
@@ -379,7 +388,7 @@ endif()
 
 # =============================
 # Tool targets (EXTRA LINT ONLY)
-# Minimal flags: just feature-test macros + include paths.
+# Minimal flags: just feature-test macros + include paths (optional local).
 # =============================
 
 # Extract only -D* tokens from STANDARD_FLAGS (to feed tools)
@@ -389,16 +398,19 @@ foreach(tok IN LISTS STANDARD_FLAGS)
         list(APPEND TOOL_DEFINES "${tok}")
     endif()
 endforeach()
-# Ensure required glibc feature-test macros are present
-foreach(req IN ITEMS -D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -D_GNU_SOURCE)
-    list(FIND TOOL_DEFINES "${req}" _idx)
-    if(_idx EQUAL -1)
-        list(APPEND TOOL_DEFINES "${req}")
+# Extract only -D* from STANDARD_FLAGS for tools; do NOT add anything implicitly.
+set(TOOL_DEFINES "")
+foreach(tok IN LISTS STANDARD_FLAGS)
+    if(tok MATCHES "^-D")
+        list(APPEND TOOL_DEFINES "${tok}")
     endif()
 endforeach()
 
-# Common -I for tools
-set(TOOL_I_FLAGS -I${CMAKE_SOURCE_DIR}/include)
+# Common -I for tools (add local include only if it exists)
+set(TOOL_I_FLAGS "")
+if(HAVE_LOCAL_INCLUDE_DIR)
+    list(APPEND TOOL_I_FLAGS -I${LOCAL_INCLUDE_DIR})
+endif()
 foreach(_inc ${EXTERNAL_INCLUDE_DIRS})
     list(APPEND TOOL_I_FLAGS -I${_inc})
 endforeach()
@@ -417,48 +429,75 @@ set(TIDY_EMPTY_DB "${CMAKE_BINARY_DIR}/tidy-empty-db")
 file(MAKE_DIRECTORY "${TIDY_EMPTY_DB}")
 file(WRITE "${TIDY_EMPTY_DB}/compile_commands.json" "[]")
 
-# clang-tidy checks (drop unused-macros)
-set(TIDY_CHECKS
-        "*,-clang-diagnostic-unused-macros,"
-        "-llvmlibc-restrict-system-libc-headers,"
-        "-altera-struct-pack-align,-readability-identifier-length,-altera-unroll-loops,"
-        "-cppcoreguidelines-init-variables,-cert-err33-c,-modernize-macro-to-enum,"
-        "-bugprone-easily-swappable-parameters,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,"
-        "-altera-id-dependent-backward-branch,-concurrency-mt-unsafe,-misc-unused-parameters,"
-        "-hicpp-signed-bitwise,-google-readability-todo,-cert-msc30-c,-cert-msc50-cpp,"
-        "-readability-function-cognitive-complexity,-clang-analyzer-security.insecureAPI.strcpy,"
-        "-cert-env33-c,-android-cloexec-accept,-misc-include-cleaner,-llvm-header-guard,"
-        "-cppcoreguidelines-macro-to-enum,-llvmlibc-implementation-in-namespace,-llvmlibc-callee-namespace"
+# Build the -checks arg as a single string
+set(TIDY_CHECKS_LIST
+        "*"
+        "-clang-diagnostic-unused-macros"
+        "-llvmlibc-restrict-system-libc-headers"
+        "-altera-struct-pack-align"
+        "-readability-identifier-length"
+        "-altera-unroll-loops"
+        "-cppcoreguidelines-init-variables"
+        "-cert-err33-c"
+        "-modernize-macro-to-enum"
+        "-bugprone-easily-swappable-parameters"
+        "-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling"
+        "-altera-id-dependent-backward-branch"
+        "-concurrency-mt-unsafe"
+        "-misc-unused-parameters"
+        "-hicpp-signed-bitwise"
+        "-google-readability-todo"
+        "-cert-msc30-c"
+        "-cert-msc50-cpp"
+        "-readability-function-cognitive-complexity"
+        "-clang-analyzer-security.insecureAPI.strcpy"
+        "-cert-env33-c"
+        "-android-cloexec-accept"
+        "-misc-include-cleaner"
+        "-llvm-header-guard"
+        "-cppcoreguidelines-macro-to-enum"
+        "-llvmlibc-implementation-in-namespace"
+        "-llvmlibc-callee-namespace"
 )
+list(JOIN TIDY_CHECKS_LIST "," TIDY_CHECKS_ARG)
 
-# Language for tools
+# Language & a standard (helpful when no compile DB is used)
 if(_PLANG STREQUAL "C")
     set(TOOL_LANG_ARG -x c)
+    set(TIDY_STD --extra-arg=-std=c11)
 else()
     set(TOOL_LANG_ARG -x c++)
+    set(TIDY_STD --extra-arg=-std=c++20)
 endif()
 
-# clang-tidy (no compiler flags; but pass required -D and -I)
-if(ALL_SOURCE_FILES OR ALL_HEADER_FILES)
-    add_custom_target(clang-tidy-check
-            COMMAND ${CLANG_TIDY} ${ALL_SOURCE_FILES} ${ALL_HEADER_FILES}
-            -quiet --warnings-as-errors='*'
-            -checks=${TIDY_CHECKS}
-            -p ${TIDY_EMPTY_DB}
-            -- ${TOOL_LANG_ARG} ${TOOL_DEFINES} ${TOOL_I_FLAGS}
-            COMMENT "Running clang-tidy (minimal defines/includes; DB disabled)"
+# Inputs
+set(TIDY_INPUTS ${ALL_SOURCE_FILES} ${ALL_HEADER_FILES})
+
+if(TIDY_INPUTS)
+    # Unique name to avoid clashes across subprojects
+    add_custom_target(${PROJECT_NAME}__clang-tidy
+            COMMAND ${CLANG_TIDY} ${TIDY_INPUTS}
+            -quiet
+            --warnings-as-errors=*          # <- no quotes
+            -checks=${TIDY_CHECKS_ARG}
+            -- ${TOOL_LANG_ARG} ${TIDY_STD} ${TOOL_DEFINES} ${TOOL_I_FLAGS}
+            COMMENT "Running clang-tidy (joined -checks; DB disabled)"
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-            COMMAND_EXPAND_LISTS)
+            COMMAND_EXPAND_LISTS
+    )
+    # Fold into your 'check' target if you like
+    if(TARGET check)
+        add_dependencies(check ${PROJECT_NAME}__clang-tidy)
+    endif()
 endif()
 
-# Analyzer enable switch: ON only if Clang is active, else OFF (opt-in)
+# Analyzer enable switch: default ON only if actual compiler is Clang
 option(ENABLE_CLANG_ANALYZER "Run clang static analyzer" OFF)
 if(CMAKE_${_PLANG}_COMPILER_ID MATCHES ".*Clang")
     set(ENABLE_CLANG_ANALYZER_DEFAULT ON)
 else()
     set(ENABLE_CLANG_ANALYZER_DEFAULT OFF)
 endif()
-# Let explicit ON override
 if(ENABLE_CLANG_ANALYZER_DEFAULT OR ENABLE_CLANG_ANALYZER)
     if(CLANG_ANALYZER_EXE AND (ALL_SOURCE_FILES OR ALL_HEADER_FILES))
         add_custom_target(clang-analyze
@@ -474,7 +513,7 @@ if(ENABLE_CLANG_ANALYZER_DEFAULT OR ENABLE_CLANG_ANALYZER)
     endif()
 endif()
 
-# cppcheck (no compiler flags, but pass -D and -I and std)
+# cppcheck (no compiler flags; just sources + defines + includes)
 if(_PLANG STREQUAL "C")
     set(CPPCHECK_STD --std=c11)
 else()
@@ -506,7 +545,7 @@ if(TARGET clang-analyze)
 endif()
 
 # =============================
-# Install rules
+# Install rules (skip headers if no local include dir)
 # =============================
 if(LIBRARY_TARGETS)
     install(TARGETS ${LIBRARY_TARGETS}
@@ -522,9 +561,11 @@ if(EXECUTABLE_TARGETS)
             RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-        FILES_MATCHING PATTERN "*.h")
+if(HAVE_LOCAL_INCLUDE_DIR)
+    install(DIRECTORY ${LOCAL_INCLUDE_DIR}/
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+            FILES_MATCHING PATTERN "*.h")
+endif()
 
 if(EXECUTABLE_TARGETS OR LIBRARY_TARGETS)
     install(EXPORT ${PROJECT_NAME}Targets
