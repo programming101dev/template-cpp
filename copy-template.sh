@@ -10,6 +10,9 @@ usage()
     exit 1
 }
 
+# --help / -h -> usage, exit 0 (P101 uniform CLI help)
+case " $* " in *" --help "*|*" -h "*) ( usage ) || true; exit 0 ;; esac
+
 # Check if exactly one argument is provided
 if [ "$#" -ne 1 ]; then
     usage
@@ -47,7 +50,7 @@ else
 fi
 
 # List of files and directories to copy
-files_to_copy=(".flags" ".clang-format" ".gitignore" "build.sh" "build-all.sh" "change-compiler.sh" "check-compilers.sh" "check-env.sh" "move.sh" "files.txt" "generate-cmakelists.sh" "generate-flags.sh" "link-flags.sh" "README.md" "src" "include")
+files_to_copy=(".flags" ".clang-format" ".gitignore" "build.sh" "build-all.sh" "change-compiler.sh" "clean.sh" "check-compilers.sh" "check-env.sh" "move.sh" "files.txt" "generate-cmakelists.sh" "generate-flags.sh" "link-flags.sh" "README.md" "coverage.txt" "profile.txt" "coverage-report.sh" "profile-report.sh" "report.sh" "src" "include")
 
 # Copy files and directories to the destination directory
 for item in "${files_to_copy[@]}"; do
@@ -69,6 +72,15 @@ done
 echo "Copy operation complete."
 
 # Navigate to the destination directory
+# Copy cmake/ helper scripts as REAL files (the template's cmake/ is a symlink
+# to scripts/cmake/; a standalone project has no scripts/ sibling to link to).
+# Without this CMake aborts: "p101 helper scripts not found".
+if [ -e "$source_dir/cmake" ] && [ ! -e "$dest_dir/cmake/FailIfCppcheckDiagnostics.cmake" ]; then
+    mkdir -p "$dest_dir/cmake"
+    cp -RL "$source_dir/cmake/." "$dest_dir/cmake/" 2>/dev/null || cp -R "$source_dir/cmake/." "$dest_dir/cmake/"
+    echo "Copied cmake/ helper scripts to $dest_dir/cmake"
+fi
+
 pushd "$dest_dir" || exit
 
 # Check if .flags exists and run scripts if it doesn't
