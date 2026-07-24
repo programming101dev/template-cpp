@@ -50,7 +50,7 @@ else
 fi
 
 # List of files and directories to copy
-files_to_copy=(".flags" ".clang-format" ".gitignore" "build.sh" "build-all.sh" "change-compiler.sh" "clean.sh" "check-compilers.sh" "check-env.sh" "move.sh" "files.txt" "generate-cmakelists.sh" "generate-flags.sh" "link-flags.sh" "README.md" "coverage.txt" "profile.txt" "coverage-report.sh" "profile-report.sh" "report.sh" "src" "include")
+files_to_copy=(".flags" ".clang-format" ".gitignore" "build.sh" "build-all.sh" "change-compiler.sh" "clean.sh" "check-compilers.sh" "check-env.sh" "doctor.sh" "move.sh" "files.txt" "generate-cmakelists.sh" "link-flags.sh" "README.md" "coverage.txt" "profile.txt" "coverage-report.sh" "profile-report.sh" "report.sh" "test.sh" "test-all.sh" "test" "src" "include")
 
 # Copy files and directories to the destination directory
 for item in "${files_to_copy[@]}"; do
@@ -85,9 +85,8 @@ pushd "$dest_dir" || exit
 
 # Check if .flags exists and run scripts if it doesn't
 if [ ! -e ".flags" ]; then
-    echo "Running check-compilers.sh and generate-flags.sh scripts."
+    echo "Running check-compilers.sh (flags come from the workspace: run setup.sh)."
     ./check-compilers.sh
-    ./generate-flags.sh
 else
     echo ".flags file already exists."
 fi

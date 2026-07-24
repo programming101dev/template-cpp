@@ -23,12 +23,28 @@ usage() {
   echo "Usage: $0 [-j N] [-t <target>] [-q]"
   echo "  -j N        Parallel build with N jobs (or set JOBS / CMAKE_BUILD_PARALLEL_LEVEL)"
   echo "  -t target   Build a specific target (e.g. -t main)"
+  echo "  -f, --format Apply clang-tidy --fix (full check set) + clang-format, then exit"
   echo "  -q          Quiet: hide the per-file compile-command dump"
   exit 1
 }
 
 # --help / -h -> usage, exit 0 (P101 uniform CLI help)
 case " $* " in *" --help "*|*" -h "*) ( usage ) || true; exit 0 ;; esac
+
+# -f / --format : apply clang-tidy --fix (full check set) + clang-format, then
+# exit. Resolves the configured build dir on its own (independent of the options
+# below) so it works regardless of how this build.sh reads its build dir.
+case " $* " in
+  *" -f "*|*" --format "*)
+    _fbd="build"; [[ -f .last-build-dir ]] && _fbd="$(< .last-build-dir)"
+    if [[ ! -d "$_fbd" || ! -f "$_fbd/CMakeCache.txt" ]]; then
+      echo "No configured build dir ('$_fbd'). Run ./change-compiler.sh first." >&2
+      exit 1
+    fi
+    echo "Formatting (clang-tidy --fix + clang-format) via target 'format' in '$_fbd'"
+    exec cmake --build "$_fbd" --target format
+    ;;
+esac
 
 # Parse options
 while getopts ":j:t:h" opt; do
