@@ -11,32 +11,49 @@
  * compiled in (see fuzz/CMakeLists.txt) so the harness is coverage-guided.
  */
 #include "display.hpp"
+#include <p101_c/p101_stdio.h>
+#include <p101_c/p101_stdlib.h>
+#include <p101_c/p101_string.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
+    p101_error *err;
+    p101_env   *env;
+
     (void)argc;
     (void)argv;
-    (void)freopen("/dev/null", "w", stdout); /* silence display()'s output */
+    err = p101_error_create(false);
+    env = p101_env_create(err, nullptr);
+    (void)p101_freopen(env, err, "/dev/null", "w", stdout); /* silence display()'s output */
+    p101_env_destroy(env);
+    p101_error_destroy(err);
     return 0;
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    char *s = static_cast<char *>(malloc(size + 1));
+    p101_error *err;
+    p101_env   *env;
+    char              *s;
+
+    err = p101_error_create(false);
+    env = p101_env_create(err, nullptr);
+    s   = static_cast<char *>(p101_malloc(env, err, size + 1));
     if(s == nullptr)
     {
-        return 0;
+        goto done;
     }
-    memcpy(s, data, size);
+    p101_memcpy(env, s, data, size);
     s[size] = '\0';
 
-    display(s); /* <-- EXAMPLE target. Swap for your own input-parsing code. */
+    display(env, err, s); /* <-- EXAMPLE target. Swap for your own input-parsing code. */
 
-    free(s);
+done:
+    p101_free(env, s);
+    p101_env_destroy(env);
+    p101_error_destroy(err);
     return 0;
 }

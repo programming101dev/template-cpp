@@ -1,9 +1,7 @@
 #include "../include/display.hpp"
-#include <iostream>
+#include <p101_c/p101_stdio.h>
 
-using std::cout;
-
-void display(const char *msg)
+void display(const p101_env *env, p101_error *err, const char *msg)
 {
-    cout << msg << "\n";
+    p101_printf(env, err, "%s\n", msg);
 }

@@ -10,10 +10,25 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(STANDARD_FLAGS
         -D_POSIX_C_SOURCE=200809L
         -D_XOPEN_SOURCE=700
-        #-D_GNU_SOURCE
-        -D_DARWIN_C_SOURCE
-        #-D__BSD_VISIBLE
         -Werror
+)
+
+set(DARWIN_STANDARD_FLAGS
+        -D_DARWIN_C_SOURCE
+)
+
+set(LINUX_STANDARD_FLAGS
+)
+
+set(BSD_STANDARD_FLAGS
+)
+
+set(P101_TIDY_EXTRA_CHECKS
+        # C++ projects intentionally use p101's printf-family wrappers. Those
+        # wrappers retain compiler format checking, but clang-tidy's vararg
+        # rules cannot distinguish them from unsafe ad-hoc vararg APIs.
+        -cppcoreguidelines-pro-type-vararg
+        -hicpp-vararg
 )
 
 # Define targets
@@ -29,5 +44,8 @@ set(main_HEADERS
         include/display.hpp
 )
 
-set(main_LINK_LIBRARIES "")
-
+set(main_LINK_LIBRARIES
+        p101_error
+        p101_env
+        p101_c
+)
