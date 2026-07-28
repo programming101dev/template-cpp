@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
-project(p101_tests C CXX)
+project(p101_tests CXX)
 enable_testing()
+set_source_files_properties(unity/unity.c PROPERTIES LANGUAGE CXX)
 add_library(unity STATIC unity/unity.c)
 target_include_directories(unity PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/unity")
 target_compile_options(unity PRIVATE -w)
