@@ -3,5 +3,5 @@
 
 void display(const p101_env *env, p101_error *err, const char *msg)
 {
-    p101_printf(env, err, "%s\n", msg);
+    (void)p101_puts(env, err, msg);
 }
