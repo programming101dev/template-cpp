@@ -57,6 +57,13 @@ if [ -f "$test_bd/CMakeCache.txt" ]; then
     rm -rf "$test_bd"
   fi
 fi
+if [ -f "$test_bd/CMakeCache.txt" ]; then
+  cached_test_compiler="$(sed -n 's/^CMAKE_CXX_COMPILER:[^=]*=//p' "$test_bd/CMakeCache.txt" | head -1)"
+  if [ -n "$cached_test_compiler" ] && [ "$cached_test_compiler" != "$comp" ]; then
+    echo ">> removing test cache configured for $cached_test_compiler"
+    rm -rf "$test_bd"
+  fi
+fi
 cov_arg="-DP101_TEST_COVERAGE=OFF"
 [ "$coverage" -eq 1 ] && cov_arg="-DP101_TEST_COVERAGE=ON"
 sanitizer_flags=""
