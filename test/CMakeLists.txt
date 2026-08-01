@@ -27,6 +27,9 @@ function(p101_add_test name)
     target_include_directories(${name} PRIVATE ${P101_PUBLIC_INCLUDE_DIRS_LIST})
     target_link_directories(${name} PRIVATE ${P101_PUBLIC_LINK_DIRS_LIST})
     target_link_libraries(${name} PRIVATE unity p101_error p101_env p101_c p101_io)
+    # Retain the admitted directories for transitive p101 dylib dependencies in
+    # a standalone copy, including libraries found in an implicit linker path.
+    set_target_properties(${name} PROPERTIES BUILD_RPATH "${P101_PUBLIC_LINK_DIRS_LIST}")
     target_compile_options(${name} PRIVATE ${_COV})
     target_link_options(${name} PRIVATE ${_COV})
     add_test(NAME ${name} COMMAND ${name})
