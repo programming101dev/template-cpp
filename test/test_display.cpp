@@ -1,11 +1,12 @@
-extern "C" {
+extern "C"
+{
 #include "unity.h"
 }
 #include "../include/display.hpp"
-#include <p101_c/p101_stdio.h>
-#include <p101_io/io.h>
 #include <cstdio>
 #include <cstring>
+#include <p101_c/p101_stdio.h>
+#include <p101_io/io.h>
 
 static p101_error *error;
 static p101_env   *env;

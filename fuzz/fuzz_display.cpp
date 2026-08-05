@@ -37,7 +37,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     p101_error *err;
     p101_env   *env;
-    char              *s;
+    char       *s;
 
     err = p101_error_create(false);
     env = p101_env_create(err, nullptr);
