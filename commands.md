@@ -11,7 +11,7 @@ Run `./change-compiler.sh -c <compiler>` once before building.
 | `./build.sh` | Strict analysis build: format-check, clang-tidy, cppcheck, static analyzer, `-Werror`, sanitizers. `-q` = quiet |
 | `./build.sh -f` | Auto-fix in place: clang-tidy `--fix` + clang-format |
 | `./build.sh -C` | Format check only, no build (hook-friendly); non-zero if unclean |
-| `./check.sh` | **The gate:** format + strict build + tests + fuzz smoke + `p101-doctor` when installed -> one PASS/FAIL. `--cov <pct>` adds a coverage gate |
+| `./check.sh` | **The gate:** format + strict build + tests + fuzz smoke -> one PASS/FAIL. `--cov <pct>` adds a coverage gate |
 | `./test.sh` | Build & run the Unity test suite (ctest) |
 | `./test-all.sh` | Run the tests across every supported compiler |
 | `./fuzz.sh` | Run the libFuzzer target (coverage-guided + sanitizers); PASS/FAIL. `-t <secs>` sets the time budget |

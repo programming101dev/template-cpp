@@ -32,7 +32,6 @@ COPY_ITEMS=(
   "config.cmake"
   "coverage.txt"
   "profile.txt"
-  "p101-doctor-args.txt"
   "coverage-report.sh"
   "profile-report.sh"
   "report.sh"
