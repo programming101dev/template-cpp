@@ -101,10 +101,15 @@ fi
 if [ "$lang" = "CXX" ] || [ "$lang" = "CPP" ]; then
   comp="$(sed -n 's/^CMAKE_CXX_COMPILER:[^=]*=//p' "$main_bd/CMakeCache.txt" | head -1)"
   compflag="-DCMAKE_CXX_COMPILER=$comp"
+  compiler_arg1="$(sed -n 's/^CMAKE_CXX_COMPILER_ARG1:[^=]*=//p' "$main_bd/CMakeCache.txt" | head -1)"
+  compiler_arg1_name="CMAKE_CXX_COMPILER_ARG1"
 else
   comp="$(sed -n 's/^CMAKE_C_COMPILER:[^=]*=//p' "$main_bd/CMakeCache.txt" | head -1)"
   compflag="-DCMAKE_C_COMPILER=$comp"
+  compiler_arg1="$(sed -n 's/^CMAKE_C_COMPILER_ARG1:[^=]*=//p' "$main_bd/CMakeCache.txt" | head -1)"
+  compiler_arg1_name="CMAKE_C_COMPILER_ARG1"
 fi
+[ -n "$compiler_arg1" ] || compiler_arg1_name=""
 [ -n "$comp" ] || { echo "Could not read the compiler from $main_bd/CMakeCache.txt." >&2; exit 1; }
 ccbase="$(basename "$comp")"
 
@@ -214,7 +219,12 @@ if p101_workspace_root="$(p101_find_workspace_root)"; then
 fi
 
 echo ">> configuring test tree ($test_bd) with $ccbase"
-cmake -S test -B "$test_bd" "$compflag" "$compile_flag_arg" ${sanitizer_args[@]+"${sanitizer_args[@]}"} ${p101_path_args[@]+"${p101_path_args[@]}"} "$cov_arg" >/dev/null
+compiler_driver_args=()
+[ -z "$compiler_arg1_name" ] || compiler_driver_args+=("-D${compiler_arg1_name}=$compiler_arg1")
+cmake -S test -B "$test_bd" "$compflag" \
+  ${compiler_driver_args[@]+"${compiler_driver_args[@]}"} \
+  "$compile_flag_arg" ${sanitizer_args[@]+"${sanitizer_args[@]}"} \
+  ${p101_path_args[@]+"${p101_path_args[@]}"} "$cov_arg" >/dev/null
 if [ "$coverage" -eq 1 ]; then
   # A source edit can change gcov's counter layout without changing the .gcda
   # filename. Never merge a new test run into stale runtime data.
