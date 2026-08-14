@@ -31,6 +31,7 @@ done
 # coverage or conformance pass most recently updated a different build marker.
 lang="C"; [ -f config.cmake ] && lang="$(sed -n 's/.*set(PROJECT_LANGUAGE[[:space:]]*"\{0,1\}\([A-Za-z]*\).*/\1/p' config.cmake | head -1)"
 requested_compiler="${P101_TEST_CC:-}"
+requested_main_build="${P101_TEST_MAIN_BUILD:-}"
 if [ "$lang" = "CXX" ] || [ "$lang" = "CPP" ]; then
   requested_compiler="${P101_TEST_CXX:-}"
 fi
@@ -81,7 +82,17 @@ p101_find_compiler_build() {
 }
 
 main_bd="build"
-if [ -n "$requested_compiler" ]; then
+if [ -n "$requested_main_build" ]; then
+  case "$requested_main_build" in
+    /*) main_bd="$requested_main_build" ;;
+    *) main_bd="$PWD/$requested_main_build" ;;
+  esac
+  [ -f "$main_bd/CMakeCache.txt" ] || {
+    echo "Requested main build has no CMake cache: $main_bd" >&2
+    exit 1
+  }
+  main_bd="$(CDPATH='' cd -- "$main_bd" && pwd -P)"
+elif [ -n "$requested_compiler" ]; then
   cache_key="CMAKE_C_COMPILER"
   if [ "$lang" = "CXX" ] || [ "$lang" = "CPP" ]; then
     cache_key="CMAKE_CXX_COMPILER"
@@ -113,7 +124,8 @@ fi
 [ -n "$comp" ] || { echo "Could not read the compiler from $main_bd/CMakeCache.txt." >&2; exit 1; }
 ccbase="$(basename "$comp")"
 
-case "$main_bd" in build-*) sfx="${main_bd#build-}" ;; *) sfx="$ccbase" ;; esac
+main_build_name="$(basename "$main_bd")"
+case "$main_build_name" in build-*) sfx="${main_build_name#build-}" ;; *) sfx="$ccbase" ;; esac
 test_cache_root="${P101_TEST_BUILD_CACHE:-}"
 if [ -n "$test_cache_root" ]; then
   case "$test_cache_root" in
@@ -136,6 +148,15 @@ if [ -f "$test_bd/CMakeCache.txt" ]; then
   cached_test_source="$(sed -n 's/^CMAKE_HOME_DIRECTORY:INTERNAL=//p' "$test_bd/CMakeCache.txt" | head -1)"
   if [ -n "$cached_test_source" ] && [ "$cached_test_source" != "$expected_test_source" ]; then
     echo ">> removing test cache moved from $cached_test_source"
+    rm -rf "$test_bd"
+  fi
+fi
+p101_current_build="$(CDPATH='' cd -- "$main_bd" && pwd -P)"
+test_main_build_identity="$test_bd/.p101-main-build"
+if [ -f "$test_bd/CMakeCache.txt" ] && [ -f "$test_main_build_identity" ]; then
+  cached_main_build="$(sed -n '1p' "$test_main_build_identity")"
+  if [ -n "$cached_main_build" ] && [ "$cached_main_build" != "$p101_current_build" ]; then
+    echo ">> removing test cache bound to $cached_main_build"
     rm -rf "$test_bd"
   fi
 fi
@@ -176,6 +197,8 @@ if [ -z "$p101_library_ccbase" ]; then
   esac
 fi
 p101_preferred_build_dir="build-$p101_library_ccbase"
+p101_exact_build_key="$(sed -n 's/^P101_BUILD_KEY:[^=]*=//p' "$main_bd/CMakeCache.txt" | head -1)"
+p101_current_repo="$(pwd -P)"
 p101_path_args=()
 p101_join_paths() {
   local out="" path
@@ -203,14 +226,15 @@ if p101_workspace_root="$(p101_find_workspace_root)"; then
   done
   for lib in "$p101_workspace_root"/libraries/*; do
     [ -d "$lib" ] || continue
-    [ -d "$lib/$p101_preferred_build_dir" ] && p101_local_link_dirs+=("$lib/$p101_preferred_build_dir")
-    if [ -f "$lib/.last-build-dir" ]; then
-      p101_last_build_dir="$(cat "$lib/.last-build-dir")"
-      [ -d "$lib/$p101_last_build_dir" ] && p101_local_link_dirs+=("$lib/$p101_last_build_dir")
+    p101_dependency_repo="$(CDPATH='' cd -- "$lib" && pwd -P)"
+    if [ "$p101_dependency_repo" = "$p101_current_repo" ]; then
+      p101_dependency_dir="$p101_current_build"
+    elif [ -n "$p101_exact_build_key" ]; then
+      p101_dependency_dir="$p101_dependency_repo/build-$p101_exact_build_key"
+    else
+      p101_dependency_dir="$p101_dependency_repo/$p101_preferred_build_dir"
     fi
-    for p101_build_dir in "$lib"/build*; do
-      [ -d "$p101_build_dir" ] && p101_local_link_dirs+=("$p101_build_dir")
-    done
+    [ -d "$p101_dependency_dir" ] && p101_local_link_dirs+=("$p101_dependency_dir")
   done
   p101_local_include_dirs_joined="$(p101_join_paths ${p101_local_include_dirs[@]+"${p101_local_include_dirs[@]}"})"
   p101_local_link_dirs_joined="$(p101_join_paths ${p101_local_link_dirs[@]+"${p101_local_link_dirs[@]}"})"
@@ -221,10 +245,11 @@ fi
 echo ">> configuring test tree ($test_bd) with $ccbase"
 compiler_driver_args=()
 [ -z "$compiler_arg1_name" ] || compiler_driver_args+=("-D${compiler_arg1_name}=$compiler_arg1")
-cmake -S test -B "$test_bd" "$compflag" \
+cmake -S test -B "$test_bd" -U 'P101_*_LIBRARY' "$compflag" \
   ${compiler_driver_args[@]+"${compiler_driver_args[@]}"} \
   "$compile_flag_arg" ${sanitizer_args[@]+"${sanitizer_args[@]}"} \
   ${p101_path_args[@]+"${p101_path_args[@]}"} "$cov_arg" >/dev/null
+printf '%s\n' "$p101_current_build" > "$test_main_build_identity"
 if [ "$coverage" -eq 1 ]; then
   # A source edit can change gcov's counter layout without changing the .gcda
   # filename. Never merge a new test run into stale runtime data.
