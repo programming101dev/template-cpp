@@ -19,29 +19,13 @@ LINK_ITEMS=(
 COPY_ITEMS=(
   ".clang-format"
   ".gitignore"
-  "build.sh"
-  "check.sh"
-  "build-all.sh"
-  "change-compiler.sh"
-  "clean.sh"
-  "check-compilers.sh"
-  "check-env.sh"
-  "doctor.sh"
-  "create-links.sh"
   "CMakeLists.txt"
   "config.cmake"
   "coverage.txt"
   "profile.txt"
-  "coverage-report.sh"
-  "profile-report.sh"
-  "report.sh"
   "README.md"
   "commands.md"
-  "test.sh"
-  "test-all.sh"
   "test"
-  "fuzz.sh"
-  "debug.sh"
   "fuzz"
   "src"
   "include"
@@ -243,17 +227,9 @@ if [ ! -e "$dest_dir/cmake/FailIfCppcheckDiagnostics.cmake" ]; then
 fi
 
 if [ "$DRYRUN" -eq 1 ]; then
-  # Dry run never created $dest_dir, so do not try to enter it.
-  say "./check-compilers.sh (initialize local compiler lists if .flags is absent)"
+  say "CMake probes compiler flags when the project is configured"
 else
-  pushd "$dest_dir" >/dev/null
-  if [ ! -e ".flags" ] && [ ! -L ".flags" ]; then
-    say "initializing compiler flags"
-    ./check-compilers.sh
-  else
-    say ".flags present, skip initialization"
-  fi
-  popd >/dev/null
+  say ".flags present; CMake will probe any missing compiler identity"
 fi
 
 say "done."
