@@ -49,3 +49,9 @@ set(main_LINK_LIBRARIES
         p101_env
         p101_c
 )
+
+# The display test captures stdout through p101_io. Keep that test-only
+# dependency out of the installed program's production dependency closure.
+set(P101_TEST_LINK_LIBRARIES
+        p101_io
+)
